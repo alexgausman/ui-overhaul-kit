@@ -43,6 +43,13 @@ your project's `docs/frontend/README.md` as they happen.
 7. **Keep the evidence.** Runs and reports are dated, kept, and never
    overwritten — they are the before/after trail that proves the work.
 
+8. **Record what passes cost in time.** Every pass write-up states its full
+   wall-clock duration plus coarse phase durations (observation / data
+   gathering vs iterating vs write-up — no per-step detail). Check the clock
+   at the start and at phase boundaries. This is what keeps the run-scope
+   estimates below honest and tells the owner what a given scope actually
+   buys.
+
 ## The sequence
 
 1. **Harness** — adapt `harness/` to the app (one config file; session-mint
