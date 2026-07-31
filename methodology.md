@@ -85,7 +85,33 @@ your project's `docs/frontend/README.md` as they happen.
   app, each screenshot-verified and committed separately, ending in a report
   and a before/after gallery for morning review. Not one long redesign.
 
-## Lessons already paid for
+## Folding owner feedback back into the flow
+
+Owner-reported misses are the flow's best fuel — and its biggest
+overengineering risk. The wrong response is a micro-rule per miss: judgment
+checklists spend *agent attention*, which is the scarcest budget in a pass,
+and a bloated checklist gives trivia and load-bearing concerns the same
+weight. The cost of a check depends on who pays it: a harness collector is
+code and runs free forever; a checklist item is attention and dilutes.
+
+Triage every miss through this rubric:
+
+1. **Is it an instance of a class?** If not, just fix it — the pass report
+   is the record. Not every miss deserves a rule.
+2. **Can the class be checked mechanically?** Add a harness collector
+   (computed styles, contrast sampling, state diffing, real-write flow
+   coverage). Prefer this over any checklist wording — laundry lists are
+   fine when code pays for them.
+3. **Does an existing principle already cover it?** Then the failure was
+   application, not absence. Note the miss against the principle; don't add
+   a duplicate rule.
+4. **Is it owner taste?** No rule. The batched gallery review *is* the
+   mechanism — an owner catching a taste call in a five-second skim is the
+   system working, not failing.
+
+Guard the checklist's budget: a judgment-checklist addition must plausibly
+catch *other future* misses, not just re-litigate this one — and prune on
+every retrospective, don't only append.
 
 Learned during the first production use of this flow; take them as defaults.
 
