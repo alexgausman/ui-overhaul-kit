@@ -1,8 +1,10 @@
 # UI Overhaul Kit
 
-A repeatable flow for getting an AI coding agent (built for Claude Code, but
-nothing here is exclusive to it) to take a web app's frontend from "meh" to
-finished-product quality — and to *prove* the improvement rather than assert it.
+A repeatable flow for getting an AI coding agent to take a web app's frontend
+from "meh" to finished-product quality — and to *prove* the improvement rather
+than assert it. Nothing in it is tool-specific — the harness is plain Node, the
+templates are plain prose — though every run behind the numbers below was
+Claude Code, so that is the path with road-testing behind it.
 
 ## Why this works when "make my UI better" doesn't
 
@@ -31,7 +33,8 @@ claim traceable to a `results.json` in the evidence trail.
 ## Quickstart
 
 Paste [`templates/bootstrap-prompt.md`](templates/bootstrap-prompt.md) into a
-fresh Claude Code chat in the repo you want overhauled. That is the setup.
+fresh agent session — Claude Code, Codex, or anything comparable — in the repo
+you want overhauled. That is the setup.
 
 The agent fetches this kit, reads your codebase, and comes back with what it
 worked out plus about five questions only you can answer — what bothers you
@@ -74,8 +77,28 @@ Setting up by hand, or continuing an overhaul in a later chat? Use
 
 - Node 20.9+ and a local (loopback) instance of your app to point the harness
   at — with auth, the harness *refuses* to run against anything non-loopback.
-- An agent that can run shell commands and read images (built with
-  [Claude Code](https://claude.com/claude-code) in mind).
+- An agent that can **run shell commands**, **edit files in a repo**, and
+  **read images**.
+
+That third one is not a nicety. The entire premise is that the agent looks at
+its own output, and a screenshot it cannot open is a file on disk. An agent
+without vision can still read every number in `results.json` — contrast, tap
+targets, overflow, click costs — and that alone is worth running, but it will
+not catch the things only a picture shows.
+
+### Per-project agent instructions
+
+Whatever tool you use, the brief tells the agent to respect your repo's house
+rules. Those live in a different filename per tool: Codex and Gemini CLI read
+`AGENTS.md`, Claude Code reads `CLAUDE.md`. Keeping byte-identical copies drifts
+immediately — make one real and symlink the rest:
+
+```sh
+ln -sfn AGENTS.md CLAUDE.md
+```
+
+One file, every tool, no mirroring step. (Learned the hard way on the project
+this kit came from, which maintained three diverging copies for months.)
 
 ## Origin
 

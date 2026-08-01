@@ -45,8 +45,9 @@ Boundaries that still stand:
 - ⟨Data-layer rules: what must never be touched or deleted⟩
 - ⟨Deploy rules: how this app ships; whether to iterate against a second local
   instance rather than production⟩
-- ⟨House rules: changelog, docs, commit discipline, anything from your
-  CLAUDE.md/AGENTS.md that applies⟩
+- ⟨House rules: changelog, docs, commit discipline, and anything in your
+  repo's agent-instruction file — AGENTS.md, CLAUDE.md or whichever your tool
+  reads — that applies here⟩
 - Undo any test data the harness creates through the UI.
 
 ## The method

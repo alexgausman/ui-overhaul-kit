@@ -1,7 +1,8 @@
 # Bootstrap prompt
 
-Paste this into a fresh Claude Code chat, in the repo you want overhauled.
-There is nothing to set up first — the agent fetches the kit, reads your code,
+Paste this into a fresh agent session — Claude Code, Codex, or anything that
+can run shell commands and read images — in the repo you want overhauled.
+There is nothing to set up first: it fetches the kit, reads your code,
 interviews you, and starts.
 
 ---
