@@ -59,11 +59,26 @@ Two things worth knowing going in:
 Setting up by hand, or continuing an overhaul in a later chat? Use
 [`templates/continue-prompt.md`](templates/continue-prompt.md).
 
+## The product pass (sibling flow)
+
+The UI pass asks *is this well made?* The **product pass** asks *should this
+exist, does its organization make sense, and what's missing?* Same skeleton —
+observe, critique against evidence, write it up, owner decides — but its
+observation layer is revealed usage from the app's own database plus a
+feature ↔ task map instead of screenshots, and it ships a
+findings-and-proposals **document rather than commits**, because product
+judgments can't be verified by a harness run the same hour. Method in
+[`product-pass.md`](product-pass.md); start one with
+[`templates/product-pass-prompt.md`](templates/product-pass-prompt.md). Run it
+after a feature phase lands, not weekly.
+
 ## What's in the box
 
 | Path | What it is |
 | --- | --- |
-| `methodology.md` | The flow itself: principles, run scopes, and lessons learned in production |
+| `methodology.md` | The UI flow itself: principles, run scopes, and lessons learned in production |
+| `product-pass.md` | The sibling flow: feature usefulness, organization, and gaps — evidence-anchored, proposals not commits |
+| `templates/product-pass-prompt.md` | The single message that starts a product pass |
 | `harness/` | The portable observation harness (Playwright + axe-core; one config file per app) |
 | `harness/apps/example.mjs` | Skeleton app config to copy |
 | `harness/apps/tv-gaus.mjs` | Complete worked example from the app this kit was extracted from |
