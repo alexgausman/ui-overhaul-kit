@@ -52,12 +52,40 @@ flows without re-shooting the whole screenshot matrix.
 - **Accessibility** — axe-core against WCAG 2.0/2.1/2.2 A+AA, including
   `incomplete` colour-contrast results, which is where a modal on an
   unresolvable background hides.
+- **Affordance** — whether a control *looks like* what it does. Computed
+  `cursor` on every interactive element; a real-pointer hover probe that diffs
+  the control's computed style **and its subtree** before and after (so
+  feedback delivered by a parent's `group-hover` to a child still counts);
+  controls floating over artwork with a translucent background and no
+  `backdrop-filter`; and artwork in a repeated card that is not a click target
+  while its title is. One probe per component variant, desktop only, since
+  hover is a pointer-device state.
 - **Navigation** — every in-app link per page, so the run can be turned into a
   graph and orphaned routes fall out of it.
 - **Palette** — the colours, radii and type weights actually computed on the
   page, which is what a design-system diff needs.
 - **Task cost** — per flow: clicks, URL entries, typed fields, full document
   loads, elapsed time, and a per-step trace of which click reloaded the page.
+- **Task outcome** — a flow's `expect(condition, message)` assertions. Unmet
+  expectations print under the flow line, render red in the gallery, and turn
+  the run's verdict from `ok` to `UNMET`. Use `note()` for observations and
+  `expect()` for anything that decides whether the task actually worked.
+
+### The affordance checks are the ones humans notice first
+
+They exist because a build that passed a full screenshot-and-axe audit was
+still handed back by its owner with: the cursor is an arrow, the button does
+nothing on hover, I cannot see the button against the artwork, and I cannot
+click the poster. None of those is visible in a screenshot, and none is an axe
+rule. Two implementation details decide whether the numbers mean anything:
+
+- **Parse alpha from whatever colour syntax the engine returns.** Tailwind v4
+  computes `oklab(L a b / .15)`, not `rgba(…)`. A parser that only knows the
+  comma form reports every translucent control as fully opaque.
+- **Fingerprint the subtree, not just the hovered element.** A card link whose
+  poster scales on hover changes nothing about the link itself. Checking only
+  the hovered element flags healthy components as dead and buries the real
+  ones.
 
 ## Writing an app config
 

@@ -17,6 +17,7 @@ import { loadAppConfig } from "./lib/config.mjs";
 import { resolveAuth } from "./lib/session.mjs";
 import { collectPageProblems, launch, newContext } from "./lib/browser.mjs";
 import { measureLayout, measureLinks, measurePalette } from "./lib/inspect.mjs";
+import { measureAffordance, parkPointer } from "./lib/affordance.mjs";
 import { measureNavigation } from "./lib/timings.mjs";
 import { scanAccessibility } from "./lib/a11y.mjs";
 import { runFlow } from "./lib/flows.mjs";
@@ -30,7 +31,7 @@ const PROJECT_ROOT = path.dirname(HARNESS_ROOT);
 const [command = "audit", ...rest] = process.argv.slice(2);
 const flags = parseFlags(rest);
 
-const appName = flags.app ?? "example";
+const appName = flags.app ?? "tv-gaus";
 const config = await loadAppConfig(appName, HARNESS_ROOT);
 
 const label = flags.label ?? command;
@@ -143,6 +144,18 @@ try {
             if (!route.skip.includes("palette") && viewport.name === "desktop") {
               entry.palette = await measurePalette(page).catch(() => null);
             }
+            // Hover is a pointer-device state and the probes cost real seconds,
+            // so affordance runs once per route at desktop width.
+            if (
+              !route.skip.includes("affordance") &&
+              viewport.name === "desktop" &&
+              colorScheme === config.colorSchemes[0]
+            ) {
+              entry.affordance = await measureAffordance(page).catch(() => null);
+              // The probes leave the pointer on the page; a screenshot must not
+              // inherit a hover state from the measurement that preceded it.
+              await parkPointer(page).catch(() => {});
+            }
 
             mkdirSync(path.dirname(foldFile), { recursive: true });
             await page.screenshot({ path: foldFile, animations: "disabled" });
@@ -187,7 +200,8 @@ try {
           console.log(
             `  ${entry.ok ? "ok " : "FAIL"} ${route.id} @ ${viewport.name}${suffix}` +
               (entry.timings?.ttfbMs != null ? ` — ttfb ${entry.timings.ttfbMs}ms` : "") +
-              (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "")
+              (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "") +
+              affordanceSummary(entry.affordance)
           );
           await page.close();
         }
@@ -255,10 +269,12 @@ try {
     for (const flow of config.flows) {
       const result = await runFlow(page, flow, { baseUrl: config.baseUrl });
       flowResults.push(result);
+      const verdict = !result.ok ? "FAIL" : result.unmetCount ? "UNMET" : "ok ";
       console.log(
-        `  ${result.ok ? "ok " : "FAIL"} flow ${result.id} — ${result.clicks} clicks, ` +
+        `  ${verdict} flow ${result.id} — ${result.clicks} clicks, ` +
           `${result.fullDocumentLoads} full loads, ${(result.elapsedMs / 1000).toFixed(1)}s` +
-          (result.ok ? "" : ` — ${result.error}`)
+          (result.ok ? "" : ` — ${result.error}`) +
+          (result.unmetCount ? `\n       ↳ ${result.unmet.join("\n       ↳ ")}` : "")
       );
     }
     await context.close();
@@ -350,4 +366,17 @@ function readPrevious(file) {
 
 function dedupe(values) {
   return [...new Set(values)];
+}
+
+/** Affordance failures are cheap to print and easy to ignore in a JSON blob. */
+function affordanceSummary(affordance) {
+  if (!affordance) return "";
+  const parts = [];
+  if (affordance.wrongCursorCount) parts.push(`${affordance.wrongCursorCount} cursor`);
+  if (affordance.noHoverFeedbackCount) parts.push(`${affordance.noHoverFeedbackCount} no-hover`);
+  if (affordance.unreadableOverImageryCount) {
+    parts.push(`${affordance.unreadableOverImageryCount} translucent`);
+  }
+  if (affordance.deadImageCount) parts.push(`${affordance.deadImageCount} dead-img`);
+  return parts.length ? ` — ${parts.join(", ")}` : "";
 }

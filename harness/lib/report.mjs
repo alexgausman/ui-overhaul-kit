@@ -33,6 +33,10 @@ export function renderGallery({ title, subtitle, runs, flows = [] }) {
           if (entry.layout?.smallTargetCount) flags.push(`${entry.layout.smallTargetCount} small targets`);
           if (entry.a11y?.byImpact?.serious) flags.push(`${entry.a11y.byImpact.serious} serious a11y`);
           if (entry.a11y?.byImpact?.critical) flags.push(`${entry.a11y.byImpact.critical} critical a11y`);
+          if (entry.affordance?.wrongCursorCount) flags.push(`${entry.affordance.wrongCursorCount} wrong cursor`);
+          if (entry.affordance?.noHoverFeedbackCount) flags.push(`${entry.affordance.noHoverFeedbackCount} no hover feedback`);
+          if (entry.affordance?.unreadableOverImageryCount) flags.push(`${entry.affordance.unreadableOverImageryCount} translucent over artwork`);
+          if (entry.affordance?.deadImageCount) flags.push(`${entry.affordance.deadImageCount} unclickable images`);
           return `
         <figure>
           <a href="${escapeHtml(entry.fullPage ?? entry.screenshot)}" target="_blank" rel="noreferrer">
@@ -66,7 +70,13 @@ export function renderGallery({ title, subtitle, runs, flows = [] }) {
         <td class="num">${flow.ok ? flow.clicks : "—"}</td>
         <td class="num">${flow.ok ? flow.fullDocumentLoads : "—"}</td>
         <td class="num">${flow.ok ? `${(flow.elapsedMs / 1000).toFixed(1)}s` : "—"}</td>
-        <td>${flow.ok ? escapeHtml((flow.notes ?? []).join(" ")) : `<span class="fail">${escapeHtml(flow.error ?? "failed")}</span>`}</td>
+        <td>${
+          flow.ok
+            ? `${(flow.unmet ?? [])
+                .map((message) => `<div class="fail">unmet: ${escapeHtml(message)}</div>`)
+                .join("")}${escapeHtml((flow.notes ?? []).join(" "))}`
+            : `<span class="fail">${escapeHtml(flow.error ?? "failed")}</span>`
+        }</td>
       </tr>`
     )
     .join("");

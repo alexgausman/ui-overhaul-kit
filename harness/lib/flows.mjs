@@ -70,6 +70,27 @@ export async function runFlow(page, flow, { baseUrl }) {
         record.notes = [...(record.notes ?? []), message];
       },
       /**
+       * A claim about the task that has to hold, rather than an observation
+       * filed for later.
+       *
+       * This exists because of a specific failure mode: a flow recorded "this
+       * page offers no way to do the task" as a note — prose, in a JSON blob,
+       * among a hundred other numbers — and nothing happened until the owner
+       * hit it himself. A note is evidence; an expectation is a claim that
+       * fails loudly. Anything a flow already knows about whether the task
+       * actually *worked* belongs here, not in note().
+       *
+       * The highest-value expectations are about what the click did to the
+       * page: that the thing you acted on is still there, that its label
+       * changed, that you did not get bounced to another route.
+       */
+      expect(condition, message) {
+        const met = Boolean(condition);
+        record.expectations = [...(record.expectations ?? []), { message, met }];
+        if (!met) record.unmet = [...(record.unmet ?? []), message];
+        return met;
+      },
+      /**
        * Measures a mutating action without performing it: the POST is answered
        * locally with the response the app would have sent, so the click cost and
        * the resulting full page load are real while the database is untouched.
@@ -108,10 +129,12 @@ export async function runFlow(page, flow, { baseUrl }) {
   }
 
   // Cleanup runs after the measurement is frozen, so undoing test data never
-  // shows up as task cost.
+  // shows up as task cost. It receives whatever `run` returned, so a flow can
+  // undo exactly what it did — sweeping "anything that looks like test data"
+  // is how a harness deletes real user data.
   if (flow.cleanup) {
     try {
-      await flow.cleanup({ page, baseUrl });
+      await flow.cleanup({ page, baseUrl, result: record.result });
       record.cleanedUp = true;
     } catch (error) {
       record.cleanupError = String(error).split("\n")[0].slice(0, 200);
@@ -125,5 +148,8 @@ export async function runFlow(page, flow, { baseUrl }) {
   record.urlEntries = clicks.filter((entry) => entry.urlEntry).length;
   record.fullDocumentLoads = fullLoads;
   record.steps = clicks;
+  // A flow that ran without throwing but failed its own expectations did not
+  // succeed at the task, and should not read as a green row.
+  record.unmetCount = (record.unmet ?? []).length;
   return record;
 }

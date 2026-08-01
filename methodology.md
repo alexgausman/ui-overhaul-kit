@@ -113,6 +113,25 @@ Guard the checklist's budget: a judgment-checklist addition must plausibly
 catch *other future* misses, not just re-litigate this one — and prune on
 every retrospective, don't only append.
 
+From the first real application of this rubric (seven owner-reported misses,
+one pass): four were mechanical and became **one** collector, one became a
+flow assertion, one was an application failure against an existing principle,
+and one was taste and got no rule at all. **Zero checklist items were added
+and two were pruned.** Expect that shape. If a retrospective is producing a
+new rule per miss, the rubric is not being applied.
+
+Two patterns worth naming, because they recur:
+
+- **A miss that a note already recorded is an application failure, not a
+  missing rule.** If the harness observed it and the pass did not act, fix the
+  mechanism that let the observation be ignored — that is what `expect()` is
+  for — rather than adding a rule telling the agent to read its own output
+  more carefully.
+- **A destructive action wearing the icon of a constructive one is a design
+  bug, not a labelling bug.** When the owner's reading of a control differs
+  from what it does, their reading is usually the right design. Fix the verb,
+  not the tooltip.
+
 Learned during the first production use of this flow; take them as defaults.
 
 - **Give the harness its own `package.json`.** Playwright and axe-core must
@@ -140,3 +159,23 @@ Learned during the first production use of this flow; take them as defaults.
 - **Expect the audit to find real defects, not just polish gaps.** The first
   run found unreadable text (1.15:1 contrast), pages reachable only by typing
   the URL, and links with no accessible name. Fix broken before beautiful.
+- **Run the after-state audit even when you are sure.** In one pass it caught
+  a contrast regression the agent had introduced in that same pass — dimming a
+  disabled control to `opacity: 0.8` dropped its text to 4.21:1 on 41 rows.
+  Budget a rebuild-and-redeploy cycle for what the after-state finds; assuming
+  the after-state is a formality is how a fix ships a new defect.
+- **Verify against a production build, not the dev server.** A dev server with
+  a broken HMR socket serves pages where *nothing hydrates*: every control is
+  inert while every screenshot looks perfect. A harness pointed at it reports
+  every interactive flow as broken and you will debug your own code for an
+  hour. Build, serve the build, then measure.
+- **A cleanup must undo what the flow did, not what looks like test data.**
+  Pass the flow's own result into `cleanup()` and delete exactly those ids.
+  The tempting version — "remove every unlocked watched episode on this show"
+  — is correct against your test fixture and destroys real user data on the
+  owner's row.
+- **Client-boundary directives are contagious.** Marking a card `"use client"`
+  also converts everything exported from that module, and a sibling component
+  that takes an icon *component* or a formatter *function* from a server page
+  will then render nothing — silently, with the error only in the server log.
+  Split the module at the boundary and say why in a comment.
