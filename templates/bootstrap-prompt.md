@@ -33,6 +33,8 @@ cannot infer:
   features that write real data (reverting everything afterwards)
 - how this ships: whether you may deploy, or should iterate against a local
   instance
+- how far to go in this first session — see the scopes below — and whether to
+  stop after the baseline audit or carry straight on
 - my corrections to your draft task list
 
 Show me your step-2 findings and that draft list alongside the questions, so I
@@ -58,14 +60,34 @@ production build rather than a dev server — a dev server with a broken HMR
 socket serves pages where nothing hydrates, and every flow will look broken
 while every screenshot looks fine.
 
-Then stop and let me read the report before you change any UI.
+**6. Scope and stopping.** Steps 1–5 are roughly an hour whatever I answer;
+what I pick in step 3 decides what happens *after* the audit:
+
+- **Audit only** — write the report and stop. Cheapest way to see what you're
+  dealing with, and the right default if you have not run this before.
+- **Focused pass** — audit, then fix one page or one flow end to end.
+- **Deep run** — audit, then work down its priorities in small verified
+  commits until the budget is gone, ending with a report and a before/after
+  gallery for me to read in the morning.
+
+However far you go, **stop cleanly**: finish the change in hand, verify it with
+a harness run, commit it, write up the pass, and tell me where you stopped and
+what you would do next. A half-applied change with no commit is worse than
+never starting. As you near the budget, stop at the next commit boundary rather
+than opening something new.
+
+Check `date -u` at phase boundaries. You have no other sense of elapsed time,
+and you cannot estimate your own remaining runtime — so treat the budget as
+something you *measure*, not something you feel.
 
 ---
 
 Notes:
 
-- That last line makes the audit a checkpoint. To let it run straight through,
-  replace it with: *"Then proceed into implementation by the audit's priorities
-  without waiting for me."*
+- Step 5 ends at a checkpoint on purpose, even for a deep run: the audit report
+  is worth reading before a long unattended session. Say so in step 3 if you'd
+  rather it carry straight on without you.
+- Scopes are budgets, not promises. "Deep run" means "keep going until the
+  budget is spent, stopping cleanly", not "this will take exactly eight hours".
 - Continuing in a later chat, or setting up by hand: see
   [`continue-prompt.md`](continue-prompt.md).

@@ -85,6 +85,21 @@ your project's `docs/frontend/README.md` as they happen.
   app, each screenshot-verified and committed separately, ending in a report
   and a before/after gallery for morning review. Not one long redesign.
 
+These are budgets, not forecasts. Two things follow, and the agent should be
+told both:
+
+- **A scope is measured, not felt.** An agent has no sense of elapsed time and
+  cannot estimate its own remaining runtime; it will cheerfully believe it is
+  an hour into a run that has taken three. The only thing that makes a budget
+  real is checking the clock at phase boundaries — which principle 8 already
+  requires for the write-up, so the cost is zero.
+- **Stopping badly is worse than not starting.** A run that hits its budget
+  mid-refactor and stops leaves the repo in a state the owner has to untangle
+  before they can even read the report. Stop at the next commit boundary:
+  finish the change in hand, verify it, commit it, write the pass up, and say
+  what you would have done next. That last sentence is what makes the following
+  session cheap.
+
 ## Folding owner feedback back into the flow
 
 Owner-reported misses are the flow's best fuel — and its biggest

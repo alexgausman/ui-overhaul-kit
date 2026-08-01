@@ -57,6 +57,22 @@ audit and write the report, then iterate in small screenshot-verified commits,
 batching owner review through galleries and dated reports under
 `docs/frontend/`. Adapt freely; record deviations in `docs/frontend/README.md`.
 
+## Run scope
+
+<!-- The default shape of a session, so later chats inherit it instead of
+     re-negotiating. Any single session can override this by saying so. -->
+
+- Default scope when I don't say otherwise: ⟨audit only / focused pass /
+  deep run⟩
+- Stop at the baseline audit for me to read: ⟨yes / no⟩
+- ⟨Any hard limits: spend, time of day, "never run unattended against
+  production"⟩
+
+Whatever the scope: stop cleanly. Finish and commit the change in hand, verify
+it with a run, write the pass up, and say where you stopped and what's next —
+never leave a change half-applied. Check the clock at phase boundaries rather
+than estimating elapsed time.
+
 ## The app, briefly
 
 <!-- What the agent needs to orient: stack, how to run it locally, where the
