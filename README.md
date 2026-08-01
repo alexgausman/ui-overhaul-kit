@@ -30,37 +30,31 @@ claim traceable to a `results.json` in the evidence trail.
 
 ## Quickstart
 
-1. **Copy `harness/` into your repo** (it has its own `package.json`, so your
-   app's dependency tree and Docker build stay untouched):
+Paste [`templates/bootstrap-prompt.md`](templates/bootstrap-prompt.md) into a
+fresh Claude Code chat in the repo you want overhauled. That is the setup.
 
-   ```sh
-   cp -r harness/ your-app/harness/
-   cd your-app/harness && npm install && npx playwright install chromium
-   ```
+The agent fetches this kit, reads your codebase, and comes back with what it
+worked out plus about five questions only you can answer — what bothers you
+about the UI, what it may do without asking, your data and deploy rules, and
+corrections to the task list it drafted. It writes your brief from those
+answers and shows it to you before acting on it. Then it builds the harness,
+runs a no-changes baseline audit, and writes the report.
 
-2. **Describe your app** in `harness/apps/<your-app>.mjs` — base URL, routes,
-   interaction states, task flows, auth recipe. Start from
-   `harness/apps/example.mjs`; read `harness/apps/tv-gaus.mjs` for a complete
-   worked example. If your app has auth, add a session-mint script to your app
-   (pattern: `examples/app-session-script.ts`). You can also just ask the
-   agent to write the app config and session script — point it at the worked
-   example.
+Read [`methodology.md`](methodology.md) while it works — two minutes, and it's
+what the agent is following.
 
-3. **Fill in the brief**: copy `templates/brief-template.md` to
-   `docs/frontend-overhaul.md` in your repo and complete the placeholders —
-   your complaints, your permissions, your design system. It defaults to
-   Tailwind + shadcn/ui (`base-nova` style); change that if you want something
-   else, but name *something* concrete: a design system is what turns "does
-   this look good?" into checkable diffs.
+Two things worth knowing going in:
 
-4. **Read `methodology.md`** (2 minutes) so you know what the agent should be
-   doing and why. It's also what the brief tells the *agent* to follow.
+- **The brief is a mandate, not paperwork.** The agent interviews you instead of
+  autofilling it because the permissions in it are real: installing tools,
+  rebuilding pages, writing to your data, deploying. Read what it drafts before
+  you approve it.
+- **Name a design system.** It defaults to Tailwind + shadcn/ui (`base-nova`
+  style); change that if you want something else, but name *something* concrete
+  — a design system is what turns "does this look good?" into checkable diffs.
 
-5. **Kick it off**: paste `templates/kickoff-prompt.md` (placeholders filled)
-   into a fresh Claude Code chat. The agent builds/adapts the harness, runs
-   the baseline audit, writes the report, and then starts improving in small
-   screenshot-verified commits. You review the galleries and reports under
-   `docs/frontend/` whenever you have time.
+Setting up by hand, or continuing an overhaul in a later chat? Use
+[`templates/continue-prompt.md`](templates/continue-prompt.md).
 
 ## What's in the box
 
@@ -70,8 +64,9 @@ claim traceable to a `results.json` in the evidence trail.
 | `harness/` | The portable observation harness (Playwright + axe-core; one config file per app) |
 | `harness/apps/example.mjs` | Skeleton app config to copy |
 | `harness/apps/tv-gaus.mjs` | Complete worked example from the app this kit was extracted from |
-| `templates/brief-template.md` | The mandate document — fill in and commit to your repo |
-| `templates/kickoff-prompt.md` | The message that starts the agent |
+| `templates/bootstrap-prompt.md` | **Start here** — the single message that sets everything up |
+| `templates/brief-template.md` | The mandate document the agent drafts with you, committed to your repo |
+| `templates/continue-prompt.md` | Resuming in a later chat, or starting from a manual setup |
 | `templates/task-worksheet.md` | How to write the task list the click-mapping measures |
 | `examples/app-session-script.ts` | Reference session-mint script for authenticated apps |
 
