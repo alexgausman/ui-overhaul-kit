@@ -52,6 +52,9 @@ function normalize(config, file) {
     routes,
     viewports: config.viewports ?? DEFAULT_VIEWPORTS,
     colorSchemes: config.colorSchemes ?? ["light"],
+    // Optional context hook for apps whose own persisted theme selector does
+    // not follow prefers-color-scheme. It runs before any page is created.
+    prepareColorScheme: config.prepareColorScheme ?? null,
     auth: config.auth ?? null,
     flows: config.flows ?? [],
     // States a screenshot of a plain page never shows: open modals, expanded
@@ -68,3 +71,10 @@ function normalize(config, file) {
 }
 
 export { DEFAULT_VIEWPORTS };
+
+/** Routes and states default to the first scheme and opt in to any others. */
+export function shouldCaptureScheme(entry, colorScheme, defaultScheme) {
+  return entry.schemes
+    ? entry.schemes.includes(colorScheme)
+    : colorScheme === defaultScheme;
+}

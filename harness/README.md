@@ -43,7 +43,7 @@ flows without re-shooting the whole screenshot matrix.
 | --- | --- |
 | `screens/<route>--<viewport>-fold.png` | The first screen — the first impression |
 | `screens/<route>--<viewport>-full.jpg` | The whole page (capped at 8,000px) |
-| `screens/state-<id>--<viewport>.png` | Modals, disclosures, focus rings, empty states |
+| `screens/state-<id>--<viewport>[-<scheme>].png` | Modals, disclosures, focus rings, empty states |
 | `gallery.html` | Everything above on one scrollable page, with problem flags |
 | `results.json` | Every measurement — timings, layout, a11y, links, task costs |
 
@@ -51,9 +51,10 @@ flows without re-shooting the whole screenshot matrix.
 
 - **Timings** — TTFB, FCP, LCP, DOMContentLoaded, document and resource bytes.
 - **Layout** — document height in screens, horizontal overflow *and the elements
-  causing it* (ignoring anything inside a deliberate scroll container), tap
-  targets under 24×24, text under 12px, the set of distinct type sizes, sticky
-  chrome, content width ratio.
+  causing it* (ignoring anything inside a deliberate scroll container),
+  effective click/tap targets under 24×24, visibly small controls whose
+  associated label still provides a usable target, text under 12px, the set of
+  distinct type sizes, sticky chrome, content width ratio.
 - **Alignment contracts** — app-declared geometry checks for centered content,
   shared sibling edges / heights / centerlines, and equal-size action groups.
   Failures print as `FLAG` during a run and appear in the gallery instead of
@@ -79,6 +80,11 @@ flows without re-shooting the whole screenshot matrix.
   expectations print under the flow line, render red in the gallery, and turn
   the run's verdict from `ok` to `UNMET`. Use `note()` for observations and
   `expect()` for anything that decides whether the task actually worked.
+
+Assertions should cover contextual boundaries as well as the happy-path result.
+If an action belongs only in one view, assert that it is visible there and absent
+where it would be misleading. That turns leaked controls and broken CSS scoping
+into failed task evidence instead of a screenshot detail someone must notice.
 
 ### The affordance checks are the ones humans notice first
 
@@ -139,6 +145,21 @@ Interaction states receive layout, alignment, accessibility, console, page-error
 and failed-request measurements as well as their screenshot. Opening a modal or
 disclosure should not reduce the harness to visual evidence alone.
 
+Routes and states capture only the first configured color scheme by default.
+Opt an entry into more with `schemes: ["light", "dark"]`. State screenshot
+filenames and merge keys include the non-default scheme, just like routes do.
+For an app that stores its own theme preference instead of following
+`prefers-color-scheme`, configure the browser context before its first page:
+
+```js
+async prepareColorScheme(context, colorScheme) {
+  await context.addInitScript(
+    (scheme) => localStorage.setItem("theme", scheme),
+    colorScheme
+  );
+}
+```
+
 ## Safety
 
 - When an app config declares `auth`, the harness carries a real session, so
@@ -154,3 +175,10 @@ disclosure should not reduce the harness to visual evidence alone.
   is answered locally; the click cost and page reload are real, nothing is
   written. Check afterwards whether your app leaves semantically-empty residue
   rows anyway (ours did), and document how to clear them.
+- Some workflows cannot be tested honestly without real writes: database
+  constraints, generated files, uploads, and multi-step server state are common
+  examples. Run those against a disposable database or data-directory snapshot
+  mounted only by the loopback test instance. Never mount the authoritative
+  source, record a source manifest or hash before and after, and destroy the
+  snapshot when the run ends. This is the third safety mode alongside exact
+  `cleanup()` and intercepted mutations.

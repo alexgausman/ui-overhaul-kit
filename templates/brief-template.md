@@ -43,6 +43,9 @@ Concretely pre-approved (no need to re-ask):
 Boundaries that still stand:
 
 - ⟨Data-layer rules: what must never be touched or deleted⟩
+- ⟨Harness mutation mode per write flow: exact cleanup / intercepted request /
+  disposable database or data-directory snapshot; how source isolation is
+  verified⟩
 - ⟨Deploy rules: how this app ships; whether to iterate against a second local
   instance rather than production⟩
 - ⟨House rules: changelog, docs, commit discipline, and anything in your
