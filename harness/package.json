@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Portable Playwright observation harness: screenshot matrix, navigation timings, scripted task flows, and axe accessibility scans for a web app described by a small per-app config.",
+  "description": "Portable Playwright observation harness: screenshot matrix, layout and geometry checks, navigation timings, scripted task flows, and axe accessibility scans for a web app described by a small per-app config.",
   "engines": {
     "node": ">=20.9.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "axe-core": "4.11.0",

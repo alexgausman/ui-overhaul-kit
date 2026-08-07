@@ -57,6 +57,10 @@ function normalize(config, file) {
     // States a screenshot of a plain page never shows: open modals, expanded
     // disclosures, focus rings, hover, in-flight and error states.
     states: config.states ?? [],
+    // Declarative geometry contracts for recurring visual regressions such as
+    // content that is not centered inside a badge or sibling controls whose
+    // heights / centerlines drift apart.
+    alignmentChecks: config.alignmentChecks ?? [],
     // Pixel budget for "is this page mostly empty?" heuristics.
     contentSelector: config.contentSelector ?? "main",
     configFile: file

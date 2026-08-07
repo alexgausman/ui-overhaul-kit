@@ -14,8 +14,8 @@ measures anything. This kit fixes that with four pieces that only work
 together:
 
 1. **Senses** — a Playwright observation harness (`harness/`) that gives the
-   agent screenshots across viewports, load timings, accessibility scans, a
-   navigation graph, and per-task click costs.
+   agent screenshots across viewports, layout and geometry checks, load
+   timings, accessibility scans, a navigation graph, and per-task click costs.
 2. **A written mandate** — a brief (`templates/brief-template.md`) that records
    what the agent may do (install tools, adopt a design system, rebuild from
    scratch), what's out of bounds, and what "good" means for *your* app.

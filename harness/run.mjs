@@ -20,6 +20,7 @@ import { measureLayout, measureLinks, measurePalette } from "./lib/inspect.mjs";
 import { measureAffordance, parkPointer } from "./lib/affordance.mjs";
 import { measureNavigation } from "./lib/timings.mjs";
 import { scanAccessibility } from "./lib/a11y.mjs";
+import { measureAlignment } from "./lib/alignment.mjs";
 import { runFlow } from "./lib/flows.mjs";
 import { renderGallery, writeJson, writeText } from "./lib/report.mjs";
 
@@ -135,6 +136,7 @@ try {
             entry.layout = await measureLayout(page, {
               contentSelector: config.contentSelector
             }).catch(() => null);
+            entry.alignment = await measureAlignment(page, config.alignmentChecks).catch(() => null);
             if (viewport.name === "desktop" && colorScheme === config.colorSchemes[0]) {
               entry.links = await measureLinks(page, config.baseUrl).catch(() => null);
             }
@@ -156,6 +158,11 @@ try {
               // inherit a hover state from the measurement that preceded it.
               await parkPointer(page).catch(() => {});
             }
+
+            // Locator-based hover probes scroll distant controls into view.
+            // A fold capture must still mean the top of the page.
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.waitForTimeout(50);
 
             mkdirSync(path.dirname(foldFile), { recursive: true });
             await page.screenshot({ path: foldFile, animations: "disabled" });
@@ -189,18 +196,18 @@ try {
 
           // Router prefetches are cancelled when the page closes; that is the
           // harness ending, not a broken request.
-          const failed = dedupe(problems.failedRequests);
-          entry.problems = {
-            consoleErrors: problems.consoleErrors.slice(0, 6),
-            pageErrors: problems.pageErrors.slice(0, 6),
-            failedRequests: failed.filter((line) => !line.includes("_rsc=")).slice(0, 6),
-            cancelledPrefetches: failed.filter((line) => line.includes("_rsc=")).length
-          };
+          entry.problems = summarizeProblems(problems);
           runs.push(entry);
+          const routeVerdict = !entry.ok
+            ? "FAIL"
+            : entry.alignment?.failedCount
+              ? "FLAG"
+              : "ok  ";
           console.log(
-            `  ${entry.ok ? "ok " : "FAIL"} ${route.id} @ ${viewport.name}${suffix}` +
+            `  ${routeVerdict} ${route.id} @ ${viewport.name}${suffix}` +
               (entry.timings?.ttfbMs != null ? ` — ttfb ${entry.timings.ttfbMs}ms` : "") +
               (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "") +
+              alignmentSummary(entry.alignment) +
               affordanceSummary(entry.affordance)
           );
           await page.close();
@@ -219,6 +226,7 @@ try {
       });
       for (const state of config.states) {
         const page = await context.newPage();
+        const problems = collectPageProblems(page);
         const name = `state-${state.id}--${viewport.name}.png`;
         const entry = {
           routeId: `state-${state.id}`,
@@ -240,6 +248,10 @@ try {
           await page.waitForLoadState("load").catch(() => {});
           if (state.setup) await state.setup(page);
           await page.waitForTimeout(400);
+          entry.layout = await measureLayout(page, {
+            contentSelector: config.contentSelector
+          }).catch(() => null);
+          entry.alignment = await measureAlignment(page, config.alignmentChecks).catch(() => null);
           entry.a11y = await scanAccessibility(page).catch(() => null);
           mkdirSync(path.join(outDir, "screens"), { recursive: true });
           await page.screenshot({
@@ -251,8 +263,18 @@ try {
           entry.ok = false;
           entry.error = String(error).split("\n")[0].slice(0, 240);
         }
+        entry.problems = summarizeProblems(problems);
         stateResults.push(entry);
-        console.log(`  ${entry.ok ? "ok " : "FAIL"} state ${state.id} @ ${viewport.name}`);
+        const stateVerdict = !entry.ok
+          ? "FAIL"
+          : entry.alignment?.failedCount
+            ? "FLAG"
+            : "ok  ";
+        console.log(
+          `  ${stateVerdict} state ${state.id} @ ${viewport.name}` +
+            (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "") +
+            alignmentSummary(entry.alignment)
+        );
         await page.close();
       }
       await context.close();
@@ -368,6 +390,16 @@ function dedupe(values) {
   return [...new Set(values)];
 }
 
+function summarizeProblems(problems) {
+  const failed = dedupe(problems.failedRequests);
+  return {
+    consoleErrors: problems.consoleErrors.slice(0, 6),
+    pageErrors: problems.pageErrors.slice(0, 6),
+    failedRequests: failed.filter((line) => !line.includes("_rsc=")).slice(0, 6),
+    cancelledPrefetches: failed.filter((line) => line.includes("_rsc=")).length
+  };
+}
+
 /** Affordance failures are cheap to print and easy to ignore in a JSON blob. */
 function affordanceSummary(affordance) {
   if (!affordance) return "";
@@ -379,4 +411,9 @@ function affordanceSummary(affordance) {
   }
   if (affordance.deadImageCount) parts.push(`${affordance.deadImageCount} dead-img`);
   return parts.length ? ` — ${parts.join(", ")}` : "";
+}
+
+function alignmentSummary(alignment) {
+  if (!alignment?.failedCount) return "";
+  return ` — ${alignment.failedCount} ALIGNMENT`;
 }

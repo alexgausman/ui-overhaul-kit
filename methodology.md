@@ -171,6 +171,14 @@ Learned during the first production use of this flow; take them as defaults.
   iterating on one flow doesn't silently shrink the matrix.
 - **Screenshot interaction states, not just pages** — modals, disclosures,
   focus rings, empty states. That's where unreviewed styling accumulates.
+- **Measure interaction states, not just their screenshots.** An open modal or
+  disclosure gets the same layout, geometry, accessibility, and runtime-error
+  checks as the page beneath it; otherwise the most weakly reviewed UI is also
+  the least observed UI.
+- **Encode recurring alignment misses as relationships, not coordinates.**
+  Content centered in its container, sibling centerlines, shared edges, and
+  equal-size action groups survive responsive layouts. Absolute pixel positions
+  do not. Keep selectors app-specific and the collector generic.
 - **Expect the audit to find real defects, not just polish gaps.** The first
   run found unreadable text (1.15:1 contrast), pages reachable only by typing
   the URL, and links with no accessible name. Fix broken before beautiful.
