@@ -15,7 +15,10 @@ function loadAxe() {
  * defined and silently fell back to something unreadable.
  */
 export async function scanAccessibility(page) {
-  await page.addScriptTag({ content: loadAxe() });
+  // Execute through the browser automation context instead of injecting an
+  // inline <script>. Apps with a strict `script-src 'self'` policy correctly
+  // reject the latter, which would otherwise erase the entire a11y result.
+  await page.evaluate(loadAxe());
   const result = await page.evaluate(async () => {
     const run = await window.axe.run(document, {
       runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] }

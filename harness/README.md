@@ -13,10 +13,15 @@ at its own output. So build senses first, measure, then change things.
 cd harness
 npm install
 npx playwright install chromium
+npm test
 ```
 
 The harness keeps its own `package.json` on purpose: Playwright and axe-core
 never enter your app's dependency tree or Docker build.
+
+The browser-backed tests exercise geometry contracts and axe under a strict
+Content Security Policy; on a minimal Linux host, Playwright may first require
+its documented browser system dependencies.
 
 ## Usage
 
@@ -49,6 +54,10 @@ flows without re-shooting the whole screenshot matrix.
   causing it* (ignoring anything inside a deliberate scroll container), tap
   targets under 24×24, text under 12px, the set of distinct type sizes, sticky
   chrome, content width ratio.
+- **Alignment contracts** — app-declared geometry checks for centered content,
+  shared sibling edges / heights / centerlines, and equal-size action groups.
+  Failures print as `FLAG` during a run and appear in the gallery instead of
+  relying on someone to notice a few crooked pixels in a full-page image.
 - **Accessibility** — axe-core against WCAG 2.0/2.1/2.2 A+AA, including
   `incomplete` colour-contrast results, which is where a modal on an
   unresolvable background hides.
@@ -96,6 +105,39 @@ ids, interaction states, and flows with cleanup and dry-run interception. Then:
 ```sh
 node harness/run.mjs audit --app <your-app> --label baseline
 ```
+
+Recurring visual primitives can declare geometry contracts in the app config:
+
+```js
+alignmentChecks: [
+  {
+    id: "badge-content",
+    label: "Badge text is centered",
+    type: "content-centered",
+    selector: ".badge",
+    tolerance: 1
+  },
+  {
+    id: "action-group",
+    label: "Sibling actions are equal-size",
+    type: "equal-size",
+    selector: ".actions",
+    childSelector: ":scope > button",
+    properties: ["width", "height"],
+    tolerance: 1
+  }
+]
+```
+
+Use `aligned-children` when siblings should share metrics such as `top`,
+`height`, `centerX`, or `centerY`. Checks whose selectors are absent or do not
+yet have enough visible elements are recorded as skipped, so one shared list can
+cover several routes and open interaction states. Text measurements wait for
+webfonts to settle and use a configurable pixel tolerance.
+
+Interaction states receive layout, alignment, accessibility, console, page-error,
+and failed-request measurements as well as their screenshot. Opening a modal or
+disclosure should not reduce the harness to visual evidence alone.
 
 ## Safety
 

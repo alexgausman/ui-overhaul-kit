@@ -47,6 +47,17 @@ const app = {
     //   async setup(page) { await page.locator("button.menu").click(); } },
   ],
 
+  // Geometry relationships the normal layout and accessibility scans cannot
+  // infer. Checks run on routes and open interaction states; absent selectors
+  // are skipped so one list can cover several screens.
+  alignmentChecks: [
+    // { id: "badge-content", label: "Badge text is centered",
+    //   type: "content-centered", selector: ".badge", tolerance: 1 },
+    // { id: "action-group", label: "Sibling actions are equal-size",
+    //   type: "equal-size", selector: ".actions",
+    //   childSelector: ":scope > button", properties: ["width", "height"], tolerance: 1 },
+  ],
+
   // The tasks your users actually do, measured end to end. Start each flow
   // where a person would plausibly be standing when they decide to do it —
   // the trip to the page is usually where the friction hides. Use `cleanup`
