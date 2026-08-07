@@ -25,6 +25,12 @@ const app = {
   // Capture dark mode too by listing both; routes opt in via `schemes`.
   colorSchemes: ["light"],
 
+  // Apps that use prefers-color-scheme need nothing else. If the app persists
+  // its own selector, prepare each browser context before its first page:
+  // async prepareColorScheme(context, colorScheme) {
+  //   await context.addInitScript((scheme) => localStorage.setItem("theme", scheme), colorScheme);
+  // },
+
   // Every route worth looking at, including error and empty states. Use fixed,
   // stable content ids in paths so later runs render the same content and
   // before/after comparisons mean something.
@@ -44,6 +50,7 @@ const app = {
   // expanded disclosures, keyboard focus, hover, empty and error states.
   states: [
     // { id: "menu-open", label: "Nav menu open", path: "/",
+    //   schemes: ["light", "dark"],
     //   async setup(page) { await page.locator("button.menu").click(); } },
   ],
 

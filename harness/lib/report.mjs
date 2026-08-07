@@ -31,6 +31,9 @@ export function renderGallery({ title, subtitle, runs, flows = [] }) {
           const flags = [];
           if (entry.layout?.overflowsHorizontally) flags.push("h-overflow");
           if (entry.layout?.smallTargetCount) flags.push(`${entry.layout.smallTargetCount} small targets`);
+          if (entry.layout?.smallVisualControlCount) {
+            flags.push(`${entry.layout.smallVisualControlCount} small visual controls`);
+          }
           if (entry.alignment?.failedCount) flags.push(`${entry.alignment.failedCount} alignment`);
           if (entry.a11y?.byImpact?.serious) flags.push(`${entry.a11y.byImpact.serious} serious a11y`);
           if (entry.a11y?.byImpact?.critical) flags.push(`${entry.a11y.byImpact.critical} critical a11y`);

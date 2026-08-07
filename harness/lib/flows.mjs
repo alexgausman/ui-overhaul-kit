@@ -82,7 +82,9 @@ export async function runFlow(page, flow, { baseUrl }) {
        *
        * The highest-value expectations are about what the click did to the
        * page: that the thing you acted on is still there, that its label
-       * changed, that you did not get bounced to another route.
+       * changed, that you did not get bounced to another route. Contextual
+       * boundaries count too: an action that belongs in one view should be
+       * present there and absent where it would be misleading.
        */
       expect(condition, message) {
         const met = Boolean(condition);

@@ -30,8 +30,9 @@ cannot infer:
 - what actually bothers me about the current UI, in my words
 - what you may do without asking — install tools, adopt a design system,
   restructure or rebuild pages — and what is off-limits
-- data rules: anything that must never be touched, and whether you may exercise
-  features that write real data (reverting everything afterwards)
+- data rules: anything that must never be touched, whether you may exercise
+  features that write data, and which safety mode applies — exact cleanup,
+  intercepted mutations, or real writes against a disposable snapshot
 - how this ships: whether you may deploy, or should iterate against a local
   instance
 - how far to go in this first session — see the scopes below — and whether to

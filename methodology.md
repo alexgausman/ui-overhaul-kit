@@ -159,6 +159,11 @@ Learned during the first production use of this flow; take them as defaults.
   never counts as task cost. For actions the UI can't undo, answer the POST
   locally (`interceptMutations`) — real click costs, no writes. Then check
   for semantically-empty residue rows anyway, and document how to clear them.
+- **Use a disposable data environment when correctness depends on real writes.**
+  Uploads, generated files, database constraints, and multi-step server state
+  cannot always be simulated by intercepting one request. Give the loopback
+  test instance a snapshot it may freely mutate, never mount the authoritative
+  source, and verify the source manifest or hash before and after the run.
 - **Use fixed content ids in routes.** A screenshot matrix is only a baseline
   if later runs render the same content.
 - **Cap full-page screenshots** (JPEG, ~8,000px) and record the true height —
@@ -179,6 +184,10 @@ Learned during the first production use of this flow; take them as defaults.
   Content centered in its container, sibling centerlines, shared edges, and
   equal-size action groups survive responsive layouts. Absolute pixel positions
   do not. Keep selectors app-specific and the collector generic.
+- **Separate effective target size from visual control size.** A wrapping label
+  can make an 18px checkbox easy to click without making it look polished.
+  Report the usable hit area and the painted control independently so an
+  accessibility pass does not erase a real visual signal.
 - **Expect the audit to find real defects, not just polish gaps.** The first
   run found unreadable text (1.15:1 contrast), pages reachable only by typing
   the URL, and links with no accessible name. Fix broken before beautiful.

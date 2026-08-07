@@ -45,18 +45,45 @@ export async function measureLayout(page, { contentSelector = "main" } = {}) {
       );
     });
 
-    const smallTargets = interactive
-      .map((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          selector: describe(element),
-          text: (element.textContent ?? "").trim().slice(0, 40),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height)
-        };
-      })
-      // WCAG 2.2 AA "Target Size (Minimum)" is 24x24 CSS px.
-      .filter((item) => item.width < 24 || item.height < 24);
+    const targetMetrics = interactive.map((element) => {
+      const visualRect = element.getBoundingClientRect();
+      const effective = effectiveTarget(element, visualRect);
+      const labels = Array.from(element.labels ?? []);
+      return {
+        element,
+        visualRect,
+        effectiveRect: effective.rect,
+        effectiveSource: effective.source,
+        text: (
+          element.getAttribute("aria-label") ||
+          element.textContent ||
+          labels.map((label) => label.textContent).join(" ") ||
+          ""
+        ).trim().slice(0, 40),
+        visuallyRendered: isVisuallyRendered(element)
+      };
+    });
+
+    // WCAG 2.2 AA "Target Size (Minimum)" applies to the region that accepts
+    // pointer input. An associated <label> is part of a form control's target,
+    // even when the input's own painted box is smaller.
+    const smallTargets = targetMetrics
+      .filter(
+        (item) => item.effectiveRect.width < 24 || item.effectiveRect.height < 24
+      )
+      .map(formatTarget);
+
+    // Keep the polish signal separate: a visibly tiny checkbox can look weak
+    // even when a padded wrapping label gives it a perfectly usable hit area.
+    const smallVisualControls = targetMetrics
+      .filter(
+        (item) =>
+          item.visuallyRendered &&
+          (item.visualRect.width < 24 || item.visualRect.height < 24) &&
+          item.effectiveRect.width >= 24 &&
+          item.effectiveRect.height >= 24
+      )
+      .map(formatTarget);
 
     const typeSizes = {};
     const smallText = [];
@@ -94,6 +121,8 @@ export async function measureLayout(page, { contentSelector = "main" } = {}) {
       interactiveCount: interactive.length,
       smallTargets: smallTargets.slice(0, 20),
       smallTargetCount: smallTargets.length,
+      smallVisualControls: smallVisualControls.slice(0, 20),
+      smallVisualControlCount: smallVisualControls.length,
       distinctTypeSizes: Object.keys(typeSizes)
         .map(Number)
         .sort((a, b) => a - b),
@@ -120,6 +149,48 @@ export async function measureLayout(page, { contentSelector = "main" } = {}) {
         parent = parent.parentElement;
       }
       return false;
+    }
+
+    function effectiveTarget(element, visualRect) {
+      const candidates = [{ source: "control", rect: visualRect }];
+      for (const label of Array.from(element.labels ?? [])) {
+        const rect = label.getBoundingClientRect();
+        const style = getComputedStyle(label);
+        if (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.display !== "none" &&
+          style.visibility !== "hidden"
+        ) {
+          candidates.push({ source: "label", rect });
+        }
+      }
+      return candidates.reduce((best, candidate) =>
+        Math.min(candidate.rect.width, candidate.rect.height) >
+        Math.min(best.rect.width, best.rect.height)
+          ? candidate
+          : best
+      );
+    }
+
+    function isVisuallyRendered(element) {
+      const style = getComputedStyle(element);
+      if (Number.parseFloat(style.opacity) === 0) return false;
+      if (style.clip === "rect(0px, 0px, 0px, 0px)") return false;
+      if (style.clipPath === "inset(50%)") return false;
+      return true;
+    }
+
+    function formatTarget(item) {
+      return {
+        selector: describe(item.element),
+        text: item.text,
+        width: Math.round(item.effectiveRect.width),
+        height: Math.round(item.effectiveRect.height),
+        visualWidth: Math.round(item.visualRect.width),
+        visualHeight: Math.round(item.visualRect.height),
+        effectiveSource: item.effectiveSource
+      };
     }
 
     function describe(element) {
