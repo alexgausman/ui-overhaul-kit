@@ -13,7 +13,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadAppConfig } from "./lib/config.mjs";
+import { loadAppConfig, shouldCaptureScheme } from "./lib/config.mjs";
 import { resolveAuth } from "./lib/session.mjs";
 import { collectPageProblems, launch, newContext } from "./lib/browser.mjs";
 import { measureLayout, measureLinks, measurePalette } from "./lib/inspect.mjs";
@@ -78,20 +78,20 @@ try {
         // seen; reusing the authenticated context would just redirect away.
         const contextFor = async (authenticated) => {
           if (!contexts.has(authenticated)) {
-            contexts.set(
-              authenticated,
-              await newContext(browser, {
-                viewport,
-                colorScheme,
-                cookies: authenticated ? auth.cookies : []
-              })
-            );
+            const context = await newContext(browser, {
+              viewport,
+              colorScheme,
+              cookies: authenticated ? auth.cookies : []
+            });
+            if (config.prepareColorScheme) {
+              await config.prepareColorScheme(context, colorScheme);
+            }
+            contexts.set(authenticated, context);
           }
           return contexts.get(authenticated);
         };
         for (const route of routes) {
-          if (route.schemes && !route.schemes.includes(colorScheme)) continue;
-          if (!route.schemes && colorScheme !== config.colorSchemes[0]) continue;
+          if (!shouldCaptureScheme(route, colorScheme, config.colorSchemes[0])) continue;
 
           const context = await contextFor(route.auth !== false);
           const page = await context.newPage();
@@ -218,66 +218,77 @@ try {
   }
 
   if (wantStates && config.states.length) {
-    for (const viewport of viewports.filter((v) => STATE_VIEWPORTS.has(v.name))) {
-      const context = await newContext(browser, {
-        viewport,
-        colorScheme: config.colorSchemes[0],
-        cookies: auth.cookies
-      });
-      for (const state of config.states) {
-        const page = await context.newPage();
-        const problems = collectPageProblems(page);
-        const name = `state-${state.id}--${viewport.name}.png`;
-        const entry = {
-          routeId: `state-${state.id}`,
-          routeLabel: state.label,
-          path: state.path,
-          notes: state.notes ?? "",
-          viewport: viewport.name,
-          colorScheme: config.colorSchemes[0],
-          width: viewport.width,
-          height: viewport.height,
-          screenshot: path.join("screens", name),
-          isState: true
-        };
-        try {
-          await page.goto(`${config.baseUrl}${state.path}`, {
-            waitUntil: "domcontentloaded",
-            timeout: 45000
-          });
-          await page.waitForLoadState("load").catch(() => {});
-          if (state.setup) await state.setup(page);
-          await page.waitForTimeout(400);
-          entry.layout = await measureLayout(page, {
-            contentSelector: config.contentSelector
-          }).catch(() => null);
-          entry.alignment = await measureAlignment(page, config.alignmentChecks).catch(() => null);
-          entry.a11y = await scanAccessibility(page).catch(() => null);
-          mkdirSync(path.join(outDir, "screens"), { recursive: true });
-          await page.screenshot({
-            path: path.join(outDir, "screens", name),
-            animations: "disabled"
-          });
-          entry.ok = true;
-        } catch (error) {
-          entry.ok = false;
-          entry.error = String(error).split("\n")[0].slice(0, 240);
+    for (const colorScheme of config.colorSchemes) {
+      const statesForScheme = config.states.filter((state) =>
+        shouldCaptureScheme(state, colorScheme, config.colorSchemes[0])
+      );
+      if (!statesForScheme.length) continue;
+
+      for (const viewport of viewports.filter((v) => STATE_VIEWPORTS.has(v.name))) {
+        const context = await newContext(browser, {
+          viewport,
+          colorScheme,
+          cookies: auth.cookies
+        });
+        if (config.prepareColorScheme) {
+          await config.prepareColorScheme(context, colorScheme);
         }
-        entry.problems = summarizeProblems(problems);
-        stateResults.push(entry);
-        const stateVerdict = !entry.ok
-          ? "FAIL"
-          : entry.alignment?.failedCount
-            ? "FLAG"
-            : "ok  ";
-        console.log(
-          `  ${stateVerdict} state ${state.id} @ ${viewport.name}` +
-            (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "") +
-            alignmentSummary(entry.alignment)
-        );
-        await page.close();
+        for (const state of statesForScheme) {
+          const page = await context.newPage();
+          const problems = collectPageProblems(page);
+          const suffix = colorScheme === config.colorSchemes[0] ? "" : `-${colorScheme}`;
+          const name = `state-${state.id}--${viewport.name}${suffix}.png`;
+          const entry = {
+            routeId: `state-${state.id}`,
+            routeLabel: state.label,
+            path: state.path,
+            notes: state.notes ?? "",
+            viewport: viewport.name,
+            colorScheme,
+            width: viewport.width,
+            height: viewport.height,
+            screenshot: path.join("screens", name),
+            isState: true
+          };
+          try {
+            await page.goto(`${config.baseUrl}${state.path}`, {
+              waitUntil: "domcontentloaded",
+              timeout: 45000
+            });
+            await page.waitForLoadState("load").catch(() => {});
+            if (state.setup) await state.setup(page);
+            await page.waitForTimeout(400);
+            entry.layout = await measureLayout(page, {
+              contentSelector: config.contentSelector
+            }).catch(() => null);
+            entry.alignment = await measureAlignment(page, config.alignmentChecks).catch(() => null);
+            entry.a11y = await scanAccessibility(page).catch(() => null);
+            mkdirSync(path.join(outDir, "screens"), { recursive: true });
+            await page.screenshot({
+              path: path.join(outDir, "screens", name),
+              animations: "disabled"
+            });
+            entry.ok = true;
+          } catch (error) {
+            entry.ok = false;
+            entry.error = String(error).split("\n")[0].slice(0, 240);
+          }
+          entry.problems = summarizeProblems(problems);
+          stateResults.push(entry);
+          const stateVerdict = !entry.ok
+            ? "FAIL"
+            : entry.alignment?.failedCount
+              ? "FLAG"
+              : "ok  ";
+          console.log(
+            `  ${stateVerdict} state ${state.id} @ ${viewport.name}${suffix}` +
+              (entry.layout?.overflowsHorizontally ? " — H-OVERFLOW" : "") +
+              alignmentSummary(entry.alignment)
+          );
+          await page.close();
+        }
+        await context.close();
       }
-      await context.close();
     }
   }
 
@@ -318,9 +329,13 @@ if (previous?.runs?.length) {
       (r) => !r.isState && !captured.has(`${r.routeId}|${r.viewport}|${r.colorScheme}`)
     )
   );
-  const states = new Set(stateResults.map((r) => `${r.routeId}|${r.viewport}`));
+  const states = new Set(
+    stateResults.map((r) => `${r.routeId}|${r.viewport}|${r.colorScheme}`)
+  );
   stateResults.push(
-    ...previous.runs.filter((r) => r.isState && !states.has(`${r.routeId}|${r.viewport}`))
+    ...previous.runs.filter(
+      (r) => r.isState && !states.has(`${r.routeId}|${r.viewport}|${r.colorScheme}`)
+    )
   );
 }
 if (previous?.flows?.length) {
